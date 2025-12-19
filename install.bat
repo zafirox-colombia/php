@@ -13,6 +13,19 @@ echo.
 set INSTALL_DIR=C:\php
 set SOURCE_DIR=%~dp0
 
+:: Check if running FROM the installation directory (already installed)
+set "CHECK_PATH=%SOURCE_DIR:~0,-1%"
+if /I "%CHECK_PATH%"=="%INSTALL_DIR%" (
+    echo [i] Running from installation directory.
+    echo     PHP Manager is already installed here.
+    echo.
+    echo     To start: Run php-manager.ps1
+    echo     To reinstall: Copy to another folder first
+    echo.
+    pause
+    exit /b 0
+)
+
 :: Check if running as administrator
 net session >nul 2>&1
 if %errorLevel% neq 0 (
