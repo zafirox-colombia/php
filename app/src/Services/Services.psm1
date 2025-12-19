@@ -125,23 +125,58 @@ class VersionManagerService {
         # 3. Asegurar PATH usando EnvironmentService Secure
         $this.EnvService.AddToPath([PathScope]::User, $this.CurrentLink)
 
-        # 4. Handle WAMP/System Path Conflicts (Priority Fix)
-        # If another PHP is in System PATH, it overrides User PATH.
-        # We must prepend to System PATH to win, which requires Admin.
+        # 4. Handle WAMP/Xampp System Path Conflicts (v2.0.1 Fix)
+        # Problem: System PATH takes priority over User PATH in Windows.
+        # If Wamp64/Xampp adds their PHP to System PATH, it overrides our User PATH entry.
+        # Solution: Prepend our path to System PATH (requires Admin).
+        
         $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
         
         if ($isAdmin) {
-             # Check if we need to override system path (optimization: only if not present? AddToPath handles that)
-             # But we generally want to avoid polluting System path unless necessary.
-             # Heuristic: If System Path has "wamp" or "php", we claim priority.
-             $sysPath = $this.EnvService.GetCurrentPath([PathScope]::System)
-             if ($sysPath.ToString() -match "wamp|xampp|php") {
-                 try {
-                    $this.EnvService.AddToPath([PathScope]::System, $this.CurrentLink)
-                 } catch {
-                    Write-Warning "Could not update System Path despite Admin privileges: $_"
-                 }
-             }
+            try {
+                $sysPath = $this.EnvService.GetCurrentPath([PathScope]::System)
+                $sysPathStr = $sysPath.ToString()
+                
+                # Detect conflicting PHP entries (Wamp, Xampp, or any php directory)
+                $conflictPatterns = @(
+                    '\\wamp\d*\\bin\\php',      # Wamp64, Wamp
+                    '\\xampp\\php',              # Xampp
+                    '\\php\d*[\\;]',             # Generic PHP folders
+                    '\\php\\php'                 # Nested php folders
+                )
+                
+                $hasConflict = $false
+                foreach ($pattern in $conflictPatterns) {
+                    if ($sysPathStr -match $pattern) {
+                        $hasConflict = $true
+                        break
+                    }
+                }
+                
+                # Also check for any path ending in \php that is NOT our current link
+                if (-not $hasConflict) {
+                    $entries = $sysPath.GetEntries()
+                    foreach ($entry in $entries) {
+                        if ($entry -match '\\php[^\\]*$' -and $entry -ne $this.CurrentLink) {
+                            $hasConflict = $true
+                            break
+                        }
+                    }
+                }
+                
+                if ($hasConflict) {
+                    # Check if our path is already in System PATH
+                    $ourPathInSystem = $sysPathStr -match [regex]::Escape($this.CurrentLink)
+                    
+                    if (-not $ourPathInSystem) {
+                        Write-Host "[PATH] Detected conflicting PHP in System PATH. Adding override..." -ForegroundColor Yellow
+                        $this.EnvService.AddToPath([PathScope]::System, $this.CurrentLink)
+                        Write-Host "[PATH] System PATH updated successfully." -ForegroundColor Green
+                    }
+                }
+            } catch {
+                Write-Warning "Could not check/update System Path: $($_.Exception.Message)"
+            }
         }
     }
 

@@ -1,15 +1,47 @@
 # PHP Manager Ultimate
 
+**Version 2.0.1** - Global PATH Fix
+
 <p align="center">
-  <strong>A modern, elegant PHP version manager for Windows</strong>
+  <img src="https://img.shields.io/badge/Platform-Windows%2010%2F11-blue?style=for-the-badge&logo=windows" alt="Windows">
+  <img src="https://img.shields.io/badge/PowerShell-5.1+-5391FE?style=for-the-badge&logo=powershell&logoColor=white" alt="PowerShell">
+  <img src="https://img.shields.io/badge/PHP-8.x%20%7C%207.x-777BB4?style=for-the-badge&logo=php&logoColor=white" alt="PHP">
+  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
 </p>
 
 <p align="center">
+  <strong>🚀 The Ultimate PHP Version Manager for Windows</strong><br>
+  <em>Switch PHP versions instantly • Beautiful Modern UI • One-Click Installation</em>
+</p>
+
+<p align="center">
+  <a href="#-quick-start">Quick Start</a> •
   <a href="#english">English</a> •
-  <a href="#español">Español</a>
+  <a href="#español">Español</a> •
+  <a href="#-features">Features</a>
 </p>
 
 ---
+
+## 🎯 Why PHP Manager Ultimate?
+
+| Problem | Solution |
+|---------|----------|
+| 😫 Manually downloading PHP versions | ✅ One-click download from php.net |
+| 😫 Editing PATH environment variables | ✅ Automatic PATH configuration |
+| 😫 Wamp/Xampp PATH conflicts | ✅ Smart conflict resolution |
+| 😫 Remembering which version is active | ✅ Visual dashboard with status |
+| 😫 Complex command-line tools | ✅ Beautiful graphical interface |
+
+## ⚡ Quick Start
+
+```batch
+# 1. Download or clone this repository
+# 2. Right-click install.bat → Run as Administrator
+# 3. Done! Use desktop shortcut to launch
+```
+
+**Keywords**: PHP version manager Windows, switch PHP versions, PHP environment manager, PHP switcher, manage multiple PHP versions, PHP for Windows, desarrollo web PHP, gestor versiones PHP
 
 <a name="english"></a>
 ## 🇺🇸 English
