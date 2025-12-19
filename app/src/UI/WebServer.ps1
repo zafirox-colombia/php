@@ -258,6 +258,108 @@ try {
                         throw $_
                     }
                 }
+                elseif ($url -eq "/api/diagnose/path" -and $method -eq "GET") {
+                    try {
+                        # 1. Get selected (active) version from PHP Manager
+                        $activeVersion = $versionSvc.GetActiveVersion()
+                        $selectedVersion = if ($activeVersion) { $activeVersion.VersionString } else { "Ninguna" }
+                        
+                        # 2. Execute php -v to get system PHP version
+                        $systemPhpVersion = "No detectado"
+                        $systemPhpPath = ""
+                        try {
+                            # Use Start-Process to capture output more reliably
+                            $phpOutput = & cmd /c "php -v" 2>&1 | Out-String
+                            if ($phpOutput -and $phpOutput -match "PHP (\d+\.\d+\.\d+)") {
+                                $systemPhpVersion = $matches[1]
+                            } elseif ($phpOutput) {
+                                # Might be an error message
+                                $systemPhpVersion = "Error detectando version"
+                            }
+                            
+                            # Also get where php.exe is located
+                            $whereOutput = & cmd /c "where php" 2>&1 | Out-String
+                            if ($whereOutput -and $whereOutput.Trim() -ne "" -and $whereOutput -notmatch "Could not find" -and $whereOutput -notmatch "no se encuentra") {
+                                $lines = $whereOutput.Trim() -split "`r?`n"
+                                if ($lines -and $lines.Count -gt 0) {
+                                    $systemPhpPath = $lines[0].Trim()
+                                }
+                            }
+                        } catch {
+                            $systemPhpVersion = "Error al ejecutar php -v"
+                        }
+                        
+                        # 3. Compare versions
+                        $match = ($systemPhpVersion -eq $selectedVersion)
+                        
+                        # 4. Get conflicting paths in System PATH
+                        $conflictingPaths = @()
+                        $ourPath = "C:\php\current"
+                        try {
+                            $sysPath = $envService.GetCurrentPath([PathScope]::System)
+                            $sysEntries = $sysPath.GetEntries()
+                            foreach ($entry in $sysEntries) {
+                                $normalizedEntry = $entry.ToLower().TrimEnd('\')
+                                $normalizedOurs = $ourPath.ToLower().TrimEnd('\')
+                                
+                                if ($normalizedEntry -eq $normalizedOurs) { continue }
+                                
+                                # Check if path contains php.exe
+                                $phpExe = Join-Path $entry "php.exe"
+                                if (Test-Path $phpExe) {
+                                    $conflictingPaths += $entry
+                                }
+                            }
+                        } catch {}
+                        
+                        # 5. Check if our path is in System PATH (and at the start)
+                        $ourPathInSystem = $false
+                        $ourPathIsFirst = $false
+                        try {
+                            $sysPathStr = ([Environment]::GetEnvironmentVariable("Path", "Machine"))
+                            if ($sysPathStr -match [regex]::Escape($ourPath)) {
+                                $ourPathInSystem = $true
+                                $ourPathIsFirst = $sysPathStr.StartsWith($ourPath, [System.StringComparison]::OrdinalIgnoreCase)
+                            }
+                        } catch {}
+                        
+                        # 6. Build recommendation
+                        $recommendation = ""
+                        $status = "ok"
+                        
+                        if ($match) {
+                            $recommendation = "La version del sistema coincide con la version seleccionada."
+                            $status = "ok"
+                        } elseif ($conflictingPaths.Count -gt 0 -and -not $ourPathIsFirst) {
+                            $recommendation = "Se detectaron rutas PHP conflictivas en el PATH Global del sistema. Para solucionarlo, agregue 'C:\php\current' al INICIO del PATH Global (Sistema)."
+                            $status = "conflict"
+                        } elseif (-not $ourPathInSystem) {
+                            $recommendation = "C:\php\current no esta en el PATH Global. Agreguelo manualmente para que PHP Manager tenga prioridad."
+                            $status = "missing"
+                        } else {
+                            $recommendation = "Posible conflicto de cache. Cierre y vuelva a abrir la terminal/CMD para aplicar los cambios."
+                            $status = "cache"
+                        }
+                        
+                        $diagResult = @{
+                            selectedVersion    = $selectedVersion
+                            systemPhpVersion   = $systemPhpVersion
+                            systemPhpPath      = $systemPhpPath
+                            match              = $match
+                            status             = $status
+                            conflictingPaths   = $conflictingPaths
+                            ourPathInSystem    = $ourPathInSystem
+                            ourPathIsFirst     = $ourPathIsFirst
+                            recommendation     = $recommendation
+                            targetPath         = $ourPath
+                        }
+                        
+                        Send-JsonResponse $context $diagResult
+                    } catch {
+                        Write-Error "Error in /api/diagnose/path: $_"
+                        Send-JsonResponse $context @{ error = $_.Exception.Message } 500
+                    }
+                }
                 elseif ($url -eq "/api/config" -and $method -eq "GET") {
                     # Read config file
                     $configPath = "C:\php\config.json"

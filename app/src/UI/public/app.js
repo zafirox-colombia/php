@@ -380,6 +380,112 @@ async function loadDebugInfo() {
     }
 }
 
+// --- PATH Diagnosis ---
+async function runPathDiagnosis() {
+    const container = document.getElementById('diagnosis-result');
+    container.innerHTML = '<div class="loading-spinner" style="padding: 20px; text-align: center;"><p>Analizando sistema...</p></div>';
+
+    try {
+        const res = await fetch('/api/diagnose/path');
+        const data = await res.json();
+
+        if (data.match) {
+            // SUCCESS - Versions match
+            container.innerHTML = `
+                <div class="diagnosis-box success">
+                    <div class="diagnosis-header success">
+                        <i class="ri-checkbox-circle-fill"></i>
+                        <div>
+                            <h4>Todo Correcto</h4>
+                            <p>La versión del sistema coincide con la seleccionada.</p>
+                        </div>
+                    </div>
+                    <div class="version-grid">
+                        <div class="version-box">
+                            <small>Versión Seleccionada</small>
+                            <h3 class="success">${data.selectedVersion}</h3>
+                        </div>
+                        <div class="version-box">
+                            <small>Versión del Sistema (php -v)</small>
+                            <h3 class="success">${data.systemPhpVersion}</h3>
+                        </div>
+                    </div>
+                    ${data.systemPhpPath ? `<p class="fix-note"><i class="ri-folder-line"></i> ${data.systemPhpPath}</p>` : ''}
+                </div>
+            `;
+        } else {
+            // WARNING - Versions don't match
+            const conflictList = data.conflictingPaths && data.conflictingPaths.length > 0
+                ? data.conflictingPaths.map(p => `<div class="path-chip conflict"><i class="ri-alert-line"></i> ${p}</div>`).join('')
+                : '';
+
+            container.innerHTML = `
+                <div class="diagnosis-box warning">
+                    <div class="diagnosis-header warning">
+                        <i class="ri-error-warning-fill"></i>
+                        <div>
+                            <h4>Conflicto Detectado</h4>
+                            <p>${data.recommendation}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="version-grid">
+                        <div class="version-box">
+                            <small>Versión Seleccionada (PHP Manager)</small>
+                            <h3 class="success">${data.selectedVersion}</h3>
+                        </div>
+                        <div class="version-box">
+                            <small>Versión Detectada (php -v)</small>
+                            <h3 class="error">${data.systemPhpVersion}</h3>
+                            ${data.systemPhpPath ? `<small>${data.systemPhpPath}</small>` : ''}
+                        </div>
+                    </div>
+
+                    ${data.conflictingPaths && data.conflictingPaths.length > 0 ? `
+                    <div class="conflict-list">
+                        <h5><i class="ri-spam-2-line"></i> Rutas PHP Conflictivas en System PATH:</h5>
+                        ${conflictList}
+                    </div>
+                    ` : ''}
+
+                    <div class="fix-instructions">
+                        <h5><i class="ri-tools-line"></i> Solución Manual (requiere Admin):</h5>
+                        <ol>
+                            <li>Presiona <kbd>Win + R</kbd>, escribe <code>sysdm.cpl</code> y presiona Enter</li>
+                            <li>Ve a la pestaña <b>Opciones Avanzadas</b> → <b>Variables de entorno</b></li>
+                            <li>En <b>Variables del sistema</b>, selecciona <b>Path</b> y haz clic en <b>Editar</b></li>
+                            <li>Haz clic en <b>Nuevo</b> y agrega la siguiente ruta <b>AL INICIO</b> de la lista:</li>
+                        </ol>
+                        <div class="copy-row">
+                            <input type="text" value="${data.targetPath}" readonly id="path-to-copy">
+                            <button onclick="copyPathToClipboard()" class="action-btn">
+                                <i class="ri-file-copy-line"></i> Copiar
+                            </button>
+                        </div>
+                        <p class="fix-note">
+                            <i class="ri-information-line"></i> Después de agregar, usa las flechas ▲ para moverlo al inicio. Reinicia la terminal.
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+    } catch (e) {
+        container.innerHTML = `<div class="diagnosis-box error"><i class="ri-error-warning-line"></i> Error al ejecutar diagnóstico: ${e.message}</div>`;
+        console.error(e);
+    }
+}
+
+function copyPathToClipboard() {
+    const input = document.getElementById('path-to-copy');
+    input.select();
+    navigator.clipboard.writeText(input.value).then(() => {
+        showToast('Ruta copiada al portapapeles', 'success');
+    }).catch(() => {
+        document.execCommand('copy');
+        showToast('Ruta copiada al portapapeles', 'success');
+    });
+}
+
 // --- Filtering ---
 let allAvailable = [];
 let currentFilter = 'all';

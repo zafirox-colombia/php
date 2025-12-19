@@ -115,68 +115,127 @@ class VersionManagerService {
             throw "Version Invalida: No se encontro 'php.exe' en $($version.Path). Es posible que haya descargado el CODIGO FUENTE (src) en lugar de los binarios. Por favor instale una version VS16/VS17 x64."
         }
 
-        # 2. Actualizar Symlink (Esto requiere acceso a IO, podríamos moverlo a un FileSystemHelper o mantener aqui)
-        # Por ahora lo mantenemos aquí o delegamos a un servicio infra legacy helper si es complejo.
-        # EnvironmentService es solo para PATH/EnvVars. Symlinks son Filesystem.
-        # Usaremos lógica nativa aquí por simplicidad de migración, pero idealmente: IFileSystem.CreateSymlink
-        
+        # 2. Actualizar Symlink
         $this.CreateSymlink($this.CurrentLink, $version.Path)
 
-        # 3. Asegurar PATH usando EnvironmentService Secure
+        # 3. Clean and update User PATH
+        # First, clean any malformed/duplicate PHP entries from User PATH
+        $this.CleanUserPath()
+        
+        # Add our normalized path to User PATH
         $this.EnvService.AddToPath([PathScope]::User, $this.CurrentLink)
 
-        # 4. Handle WAMP/Xampp System Path Conflicts (v2.0.1 Fix)
+        # 4. Handle System PATH Conflicts (v2.0.2 Fix)
         # Problem: System PATH takes priority over User PATH in Windows.
-        # If Wamp64/Xampp adds their PHP to System PATH, it overrides our User PATH entry.
-        # Solution: Prepend our path to System PATH (requires Admin).
+        # When PHP exists in both User and System PATH, System wins.
+        # Solution: Detect conflicts and prepend to System PATH (requires Admin).
         
         $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+        $hasSystemConflict = $this.DetectSystemPathConflict()
         
-        if ($isAdmin) {
-            try {
-                $sysPath = $this.EnvService.GetCurrentPath([PathScope]::System)
-                $sysPathStr = $sysPath.ToString()
-                
-                # Detect conflicting PHP entries (Wamp, Xampp, or any php directory)
-                $conflictPatterns = @(
-                    '\\wamp\d*\\bin\\php',      # Wamp64, Wamp
-                    '\\xampp\\php',              # Xampp
-                    '\\php\d*[\\;]',             # Generic PHP folders
-                    '\\php\\php'                 # Nested php folders
-                )
-                
-                $hasConflict = $false
-                foreach ($pattern in $conflictPatterns) {
-                    if ($sysPathStr -match $pattern) {
-                        $hasConflict = $true
-                        break
-                    }
-                }
-                
-                # Also check for any path ending in \php that is NOT our current link
-                if (-not $hasConflict) {
-                    $entries = $sysPath.GetEntries()
-                    foreach ($entry in $entries) {
-                        if ($entry -match '\\php[^\\]*$' -and $entry -ne $this.CurrentLink) {
-                            $hasConflict = $true
-                            break
-                        }
-                    }
-                }
-                
-                if ($hasConflict) {
-                    # Check if our path is already in System PATH
-                    $ourPathInSystem = $sysPathStr -match [regex]::Escape($this.CurrentLink)
+        if ($hasSystemConflict) {
+            if ($isAdmin) {
+                try {
+                    $sysPath = $this.EnvService.GetCurrentPath([PathScope]::System)
+                    $sysPathStr = $sysPath.ToString()
                     
-                    if (-not $ourPathInSystem) {
-                        Write-Host "[PATH] Detected conflicting PHP in System PATH. Adding override..." -ForegroundColor Yellow
-                        $this.EnvService.AddToPath([PathScope]::System, $this.CurrentLink)
-                        Write-Host "[PATH] System PATH updated successfully." -ForegroundColor Green
+                    # Check if our path is already at the START of System PATH
+                    $isFirst = $sysPathStr.StartsWith($this.CurrentLink, [System.StringComparison]::OrdinalIgnoreCase)
+                    
+                    if (-not $isFirst) {
+                        Write-Host '[PATH] Conflicto detectado: otra version de PHP esta en System PATH.' -ForegroundColor Yellow
+                        Write-Host '[PATH] Agregando C:\php\current al inicio del System PATH...' -ForegroundColor Yellow
+                        
+                        # Remove our path if it exists elsewhere in System PATH, then prepend
+                        $cleanedSysPath = $sysPath.Remove($this.CurrentLink)
+                        $newSysPath = $cleanedSysPath.Prepend($this.CurrentLink)
+                        
+                        $this.EnvService.UpdatePath([PathScope]::System, $newSysPath)
+                        Write-Host '[PATH] System PATH actualizado correctamente.' -ForegroundColor Green
                     }
+                } catch {
+                    Write-Warning "No se pudo actualizar System PATH: $($_.Exception.Message)"
                 }
-            } catch {
-                Write-Warning "Could not check/update System Path: $($_.Exception.Message)"
+            } else {
+                # Not admin but conflict exists - show warning
+                Write-Host ''
+                Write-Host '+===================================================================+' -ForegroundColor Red
+                Write-Host '|  ADVERTENCIA: Conflicto de PATH detectado                        |' -ForegroundColor Red
+                Write-Host '+===================================================================+' -ForegroundColor Red
+                Write-Host '|  Existe otra instalacion de PHP en el System PATH (Wamp/Xampp).  |' -ForegroundColor Yellow
+                Write-Host '|  Esto puede causar que php -v en CMD/PowerShell use la           |' -ForegroundColor Yellow
+                Write-Host '|  version incorrecta.                                             |' -ForegroundColor Yellow
+                Write-Host '|                                                                  |' -ForegroundColor Yellow
+                Write-Host '|  SOLUCION: Ejecute PHP Manager como Administrador para           |' -ForegroundColor Cyan
+                Write-Host '|  corregir automaticamente el System PATH.                        |' -ForegroundColor Cyan
+                Write-Host '+===================================================================+' -ForegroundColor Red
+                Write-Host ''
             }
+        }
+    }
+
+    # Helper: Detect if there's a conflicting PHP in System PATH
+    hidden [bool] DetectSystemPathConflict() {
+        try {
+            $sysPath = $this.EnvService.GetCurrentPath([PathScope]::System)
+            $entries = $sysPath.GetEntries()
+            
+            foreach ($entry in $entries) {
+                $normalizedEntry = $entry.ToLower().TrimEnd('\')
+                $normalizedOurs = $this.CurrentLink.ToLower().TrimEnd('\')
+                
+                # Skip our own path
+                if ($normalizedEntry -eq $normalizedOurs) { continue }
+                
+                # Check for common PHP installation patterns
+                if ($normalizedEntry -match '\\wamp\d*\\bin\\php') { return $true }
+                if ($normalizedEntry -match '\\xampp\\php') { return $true }
+                if ($normalizedEntry -match '\\php\d*$') { return $true }
+                
+                # Check if this path contains php.exe
+                $phpExe = Join-Path $entry "php.exe"
+                if (Test-Path $phpExe) { return $true }
+            }
+        } catch {
+            # If we can't read System PATH, assume no conflict
+        }
+        return $false
+    }
+
+    # Helper: Clean malformed/duplicate PHP entries from User PATH
+    hidden [void] CleanUserPath() {
+        try {
+            $userPath = $this.EnvService.GetCurrentPath([PathScope]::User)
+            $entries = $userPath.GetEntries()
+            $cleanEntries = @()
+            $seenPaths = @{}
+            
+            foreach ($entry in $entries) {
+                # Normalize the path for comparison
+                $normalized = $entry.ToLower().TrimEnd('\')
+                
+                # Skip duplicates
+                if ($seenPaths.ContainsKey($normalized)) { continue }
+                
+                # Skip malformed PHP manager paths (e.g., C:\php\versions\..\current)
+                if ($entry -match '\\php\\versions\\\.\.\\current') { continue }
+                
+                # Skip old PHP manager entries that aren't our canonical path
+                if ($entry -match '\\php\\current' -and $entry -ne $this.CurrentLink) { continue }
+                
+                $seenPaths[$normalized] = $true
+                $cleanEntries += $entry
+            }
+            
+            # Only update if we actually cleaned something
+            $newPathStr = $cleanEntries -join ";"
+            if ($newPathStr -ne $userPath.ToString()) {
+                $newPath = [SystemPath]::new($newPathStr)
+                $this.EnvService.UpdatePath([PathScope]::User, $newPath)
+                Write-Host '[PATH] User PATH limpiado (entradas duplicadas/malformadas removidas).' -ForegroundColor Gray
+            }
+        } catch {
+            Write-Warning "No se pudo limpiar User PATH: $($_.Exception.Message)"
         }
     }
 

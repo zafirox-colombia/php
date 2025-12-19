@@ -1,6 +1,6 @@
 # PHP Manager Ultimate
 
-**Version 2.0.1** - Global PATH Fix
+**Version 2.0.2** - PATH Diagnostic & Enhanced Conflict Resolution
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Windows%2010%2F11-blue?style=for-the-badge&logo=windows" alt="Windows">
@@ -32,6 +32,7 @@
 | 😫 Wamp/Xampp PATH conflicts | ✅ Smart conflict resolution |
 | 😫 Remembering which version is active | ✅ Visual dashboard with status |
 | 😫 Complex command-line tools | ✅ Beautiful graphical interface |
+| 😫 "php -v" shows wrong version | ✅ **NEW** PATH Diagnostic tool |
 
 ## ⚡ Quick Start
 
@@ -55,6 +56,7 @@
 - 🗑️ **Easy Uninstall** - Remove versions with one click
 - 🛡️ **Wamp64 Compatible** - Resolves PATH conflicts with Wamp/Xampp
 - 📊 **Debug Logging** - Configurable debug logs
+- 🩺 **PATH Diagnostic** *(v2.0.2)* - Verifies if `php -v` matches selected version with step-by-step fix instructions
 
 ### Requirements
 
@@ -116,6 +118,7 @@ Edit `C:\php\config.json` to customize:
 - 🗑️ **Desinstalación Fácil** - Elimina versiones con un clic
 - 🛡️ **Compatible con Wamp64** - Resuelve conflictos de PATH con Wamp/Xampp
 - 📊 **Logs de Debug** - Logs de depuración configurables
+- 🩺 **Diagnóstico de PATH** *(v2.0.2)* - Verifica si `php -v` coincide con la versión seleccionada con instrucciones paso a paso
 
 ### Requisitos
 

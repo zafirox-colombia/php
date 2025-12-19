@@ -444,3 +444,171 @@
 .toggle-switch input:checked+.toggle-slider:before {
     transform: translateX(22px);
 }
+
+/* Diagnosis Section Styles */
+.diagnosis-box {
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+.diagnosis-box.success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid var(--success);
+}
+
+.diagnosis-box.warning {
+    background: rgba(234, 179, 8, 0.1);
+    border: 1px solid #eab308;
+}
+
+.diagnosis-box.error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--danger);
+}
+
+.diagnosis-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1rem;
+}
+
+.diagnosis-header i {
+    font-size: 2rem;
+}
+
+.diagnosis-header.success i {
+    color: var(--success);
+}
+
+.diagnosis-header.warning i {
+    color: #eab308;
+}
+
+.diagnosis-header.error i {
+    color: var(--danger);
+}
+
+.diagnosis-header h4 {
+    margin: 0;
+}
+
+.diagnosis-header.success h4 {
+    color: var(--success);
+}
+
+.diagnosis-header.warning h4 {
+    color: #eab308;
+}
+
+.diagnosis-header p {
+    margin: 4px 0 0 0;
+    color: var(--text-muted);
+}
+
+.version-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.version-box {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--glass-border);
+}
+
+.version-box small {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.version-box h3 {
+    margin: 6px 0 0 0;
+    font-size: 1.3rem;
+}
+
+.version-box h3.success {
+    color: var(--success);
+}
+
+.version-box h3.error {
+    color: var(--danger);
+}
+
+.fix-instructions {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid var(--primary);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-top: 1rem;
+}
+
+.fix-instructions h5 {
+    margin: 0 0 1rem 0;
+    color: var(--primary);
+}
+
+.fix-instructions ol {
+    margin: 0;
+    padding-left: 1.25rem;
+    line-height: 1.8;
+}
+
+.fix-instructions kbd {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+.fix-instructions code {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.copy-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 1rem;
+}
+
+.copy-row input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    padding: 10px 14px;
+    border-radius: 6px;
+    color: var(--success);
+    font-family: monospace;
+    font-size: 0.95rem;
+}
+
+.fix-note {
+    margin: 1rem 0 0 0;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.conflict-list {
+    margin-bottom: 1rem;
+}
+
+.conflict-list h5 {
+    margin: 0 0 8px 0;
+    color: var(--text-muted);
+}
+
+.path-chip.conflict {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--danger);
+}
+
+.path-chip.conflict i {
+    color: var(--danger);
+}
