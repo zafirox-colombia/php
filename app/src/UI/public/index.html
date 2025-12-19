@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHP Manager Ultimate</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="css/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="ri-code-s-slash-line"></i> PHP<span>MGR</span>
+            </div>
+            <nav>
+                <button class="nav-btn active" onclick="showTab('installed')"><i class="ri-hard-drive-2-line"></i>
+                    Instaladas</button>
+                <button class="nav-btn" onclick="showTab('available')"><i class="ri-download-cloud-2-line"></i>
+                    Disponibles</button>
+                <button class="nav-btn" onclick="showTab('debug')"><i class="ri-bug-line"></i> Debug</button>
+                <div class="nav-spacer"></div>
+                <button class="nav-btn secondary" onclick="openSettings()"><i class="ri-settings-4-line"></i>
+                    Configuración</button>
+            </nav>
+            <div class="version-badge">
+                <span>v2.0.1</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header>
+                <h1>Dashboard</h1>
+                <div class="status-pill" id="global-status">
+                    <span class="dot"></span> Active: <b id="current-active">Loading...</b>
+                </div>
+            </header>
+
+            <!-- Tab: Installed -->
+            <section id="tab-installed" class="view-section active">
+                <div class="card-grid" id="installed-list">
+                    <!-- Cards injected by JS -->
+                    <div class="loading-spinner"></div>
+                </div>
+            </section>
+
+            <!-- Tab: Available -->
+            <section id="tab-available" class="view-section hidden">
+                <div class="toolbar">
+                    <input type="text" placeholder="Buscar versión (ej. 8.3)..." id="search-input">
+                    <button class="action-btn" onclick="loadAvailable()">
+                        <i class="ri-refresh-line"></i> Refrescar
+                    </button>
+                    <!-- Tabs for Architecture -->
+                    <div class="arch-tabs">
+                        <button class="filter-btn active" onclick="filterArch('all')">Todos</button>
+                        <button class="filter-btn" onclick="filterArch('recommended')"><i class="ri-star-fill"
+                                style="color:#eab308; margin-right:4px;"></i> Wamp64 (Rec.)</button>
+                        <button class="filter-btn" onclick="filterArch('x64')">x64</button>
+                        <button class="filter-btn" onclick="filterArch('x86')">x86</button>
+                    </div>
+                </div>
+                <div class="list-table-container">
+                    <table class="glass-table">
+                        <thead>
+                            <tr>
+                                <th>Versión</th>
+                                <th>Tipo</th>
+                                <th>Arq</th>
+                                <th>Estado</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="available-list">
+                            <!-- Rows injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Tab: Debug -->
+            <section id="tab-debug" class="view-section hidden">
+                <div class="header-row"
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2><i class="ri-bug-line"></i> Diagnóstico del Sistema</h2>
+                    <button class="action-btn" onclick="loadDebugInfo()">
+                        <i class="ri-refresh-line"></i> Actualizar
+                    </button>
+                </div>
+
+                <div class="dashboard-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <!-- Current Path Card -->
+                    <div class="card" style="align-items: flex-start; text-align: left; height: auto;">
+                        <div class="card-header"
+                            style="width: 100%; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px;">
+                            <h3><i class="ri-folder-settings-line"></i> PATH Actual (User)</h3>
+                            <small style="color: rgba(255,255,255,0.5);">Variables de entorno activas</small>
+                        </div>
+                        <div class="card-body" style="width: 100%; max-height: 400px; overflow-y: auto;">
+                            <div id="debug-current-path" class="debug-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- History Card -->
+                    <div class="card" style="align-items: flex-start; text-align: left; height: auto;">
+                        <div class="card-header"
+                            style="width: 100%; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px;">
+                            <h3><i class="ri-history-line"></i> Historial de Backups</h3>
+                            <small style="color: rgba(255,255,255,0.5);">Snapshots automáticos previos</small>
+                        </div>
+                        <div class="card-body" style="width: 100%; max-height: 400px; overflow-y: auto;">
+                            <div id="debug-history-path" class="debug-list"></div>
+                            <div id="debug-history-empty" class="empty-state hidden"
+                                style="padding: 20px; text-align: center; color: rgba(255,255,255,0.3);">
+                                <i class="ri-archive-line" style="font-size: 2rem;"></i>
+                                <p>No hay historial registrado aún.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="toast-container"></div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2>Configuración</h2>
+            <div class="form-group">
+                <label>Puerto del Servidor</label>
+                <input type="text" value="8085" readonly disabled>
+            </div>
+            <div class="form-group">
+                <label>Ruta de Versiones</label>
+                <input type="text" value="C:\php\versions" readonly disabled>
+            </div>
+            <div class="form-group">
+                <label>Tema</label>
+                <select disabled>
+                    <option>Dark Premium</option>
+                    <option>Light</option>
+                </select>
+            </div>
+            <hr style="border-color: rgba(255,255,255,0.1); margin: 1rem 0;">
+            <h3 style="margin-bottom: 1rem; font-size: 1rem; color: rgba(255,255,255,0.8);"><i class="ri-bug-line"></i>
+                Debug</h3>
+            <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+                <label style="margin: 0;">Launcher Debug Log</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="config-launcher-debug" onchange="saveConfig()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+                <label style="margin: 0;">Server Debug Log</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="config-server-debug" onchange="saveConfig()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeSettings()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,10 @@
+[2025-12-19 16:08:45] --- Server Process Started ---
+[2025-12-19 16:08:46] Root Path context: C:\php\app\src\UI
+[2025-12-19 16:08:46] Initializing Services...
+[2025-12-19 16:08:46] Services Initialized Successfully.
+[2025-12-19 16:08:46] HTTP Listener Started on port 8085
+[2025-12-19 16:14:19] --- Server Process Started ---
+[2025-12-19 16:14:19] Root Path context: C:\php\app\src\UI
+[2025-12-19 16:14:19] Initializing Services...
+[2025-12-19 16:14:19] Services Initialized Successfully.
+[2025-12-19 16:14:19] HTTP Listener Started on port 8085

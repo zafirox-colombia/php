@@ -1,0 +1,100 @@
+/* src/UI/public/css/layout.css */
+.app-container {
+    display: flex;
+    height: 100%;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 260px;
+    background: rgba(15, 23, 42, 0.4);
+    /* Más transparente */
+    backdrop-filter: blur(30px) saturate(180%);
+    /* Efecto Acrylic */
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.logo {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 3rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo span {
+    color: var(--primary);
+}
+
+.logo i {
+    color: var(--accent);
+}
+
+.nav-spacer {
+    flex: 1;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    padding: 3rem;
+    overflow-y: auto;
+    position: relative;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3rem;
+}
+
+h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    opacity: 0.9;
+}
+
+/* Views */
+.view-section {
+    display: none;
+}
+
+.view-section.active {
+    display: block;
+}
+
+.active {
+    display: block;
+}
+
+/* Utility */
+.hidden {
+    display: none !important;
+}
+
+/* Utility */
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card,
+tr {
+    animation: fadeIn 0.4s ease-out forwards;
+}

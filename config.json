@@ -1,0 +1,12 @@
+﻿{
+    "debug":  {
+                  "launcher_debug_enabled":  false,
+                  "server_debug_enabled":  false
+              },
+    "server":  {
+                   "port":  8085
+               },
+    "browser":  {
+                    "use_app_mode":  true
+                }
+}
